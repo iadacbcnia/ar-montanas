@@ -1,118 +1,141 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>AR Montañas</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.2.1/aframe/build/aframe-ar-nft.js"></script>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Montañas de El Hoyo - AR</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/three.js/build/ar-threex-location-only.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js"></script>
     <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
-      #startBtn {
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        padding: 16px 24px;
-        font-size: 18px;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        z-index: 10;
-      }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000;
+        }
+        #startBtn {
+            padding: 15px 30px;
+            font-size: 20px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #loading-message {
+            margin-top: 20px;
+            font-size: 16px;
+            display: none; /* Oculto por defecto */
+        }
     </style>
-  </head>
-  <body>
-    <button id="startBtn">Iniciar AR</button>
+</head>
+<body>
+
+    <div id="overlay">
+        <h1>Montañas de El Hoyo</h1>
+        <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas.</p>
+        <button id="startBtn">Iniciar AR</button>
+        <p id="loading-message">Cargando ubicación, por favor espere...</p>
+    </div>
 
     <a-scene
-      vr-mode-ui="enabled: false"
-      embedded
-      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
-      device-orientation-permission-ui="enabled: true"
-      style="display: none;"
-    >
-      <a-camera gps-camera rotation-reader></a-camera>
+        id="ar-scene"
+        vr-mode-ui="enabled: false"
+        embedded
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
+        renderer="antialias: true; alpha: true"
+        device-orientation-permission-ui="enabled: false"
+        style="display:none"
+        gps-camera="maxDistance: 10000; gpsMinDistance: 10; gpsTimeOut: 15000">
+
+        <a-camera gps-camera rotation-reader></a-camera>
+
     </a-scene>
 
     <script>
-      const montanas = [
-        { nombre: "Cerro Pirque", lat: -42.0675, lon: -71.4822 },
-        { nombre: "Cerro Plataforma", lat: -42.0560, lon: -71.5100 },
-        { nombre: "Cerro Currumahuida", lat: -42.0800, lon: -71.5170 }
-      ];
+        // Datos de las montañas en un array de objetos
+        const mountains = [
+            { name: "Cerro Pirque", latitude: -42.0743, longitude: -71.4710 },
+            { name: "Cerro Plataforma", latitude: -42.1005, longitude: -71.4542 },
+            { name: "Cerro Hielo Azul", latitude: -42.0489, longitude: -71.5453 },
+            { name: "Pirque Chico", latitude: -42.0785, longitude: -71.4622 }
+        ];
 
-      // Fórmula de distancia Haversine
-      function calcularDistancia(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Radio tierra en km
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a =
-          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1 * Math.PI / 180) *
-          Math.cos(lat2 * Math.PI / 180) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-      }
-
-      document.getElementById('startBtn').addEventListener('click', async () => {
-        try {
-          await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-          document.getElementById('startBtn').style.display = 'none';
-          document.querySelector('a-scene').style.display = 'block';
-
-          navigator.geolocation.getCurrentPosition((pos) => {
-            const userLat = pos.coords.latitude;
-            const userLon = pos.coords.longitude;
-
-            montanas.forEach(m => {
-              const dist = calcularDistancia(userLat, userLon, m.lat, m.lon);
-              const texto = `${m.nombre} – ${dist.toFixed(1)} km`;
-
-              // Crear un entity con fondo + icono + texto
-              const cartel = document.createElement("a-entity");
-              cartel.setAttribute("look-at", "[gps-camera]");
-              cartel.setAttribute("scale", "500 500 500");
-              cartel.setAttribute("gps-entity-place", `latitude: ${m.lat}; longitude: ${m.lon};`);
-
-              // Fondo rectangular semitransparente
-              const fondo = document.createElement("a-plane");
-              fondo.setAttribute("color", "black");
-              fondo.setAttribute("opacity", "0.5");
-              fondo.setAttribute("height", "1.2");
-              fondo.setAttribute("width", "7.5");
-              fondo.setAttribute("position", "0 0 0");
-              cartel.appendChild(fondo);
-
-              // Icono (emoji montaña)
-              const icono = document.createElement("a-text");
-              icono.setAttribute("value", "🏔️");
-              icono.setAttribute("color", "white");
-              icono.setAttribute("align", "center");
-              icono.setAttribute("width", "1.2");
-              icono.setAttribute("position", "-3 0 0.1"); // a la izquierda del texto
-              cartel.appendChild(icono);
-
-              // Texto
-              const label = document.createElement("a-text");
-              label.setAttribute("value", texto);
-              label.setAttribute("align", "center");
-              label.setAttribute("color", "white");
-              label.setAttribute("width", "6");
-              label.setAttribute("position", "0 0 0.1");
-              cartel.appendChild(label);
-
-              document.querySelector("a-scene").appendChild(cartel);
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('startBtn');
+            const overlay = document.getElementById('overlay');
+            const arScene = document.getElementById('ar-scene');
+            const loadingMessage = document.getElementById('loading-message');
+            
+            // Genera las entidades para cada montaña (contenedor con fondo y texto)
+            mountains.forEach(mountain => {
+                // Contenedor principal con posición GPS
+                const container = document.createElement('a-entity');
+                container.setAttribute('gps-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude};`);
+                
+                // Fondo semitransparente (plano negro)
+                const background = document.createElement('a-plane');
+                background.setAttribute('position', '0 0 -0.01');
+                background.setAttribute('rotation', '-90 0 0');
+                background.setAttribute('width', '0.05');
+                background.setAttribute('height', '0.01');
+                background.setAttribute('material', 'color: black; opacity: 0.5; side: double');
+                background.setAttribute('look-at', '[gps-camera]');
+                container.appendChild(background);
+                
+                // Texto con escala aumentada
+                const textEntity = document.createElement('a-text');
+                textEntity.setAttribute('value', mountain.name);
+                textEntity.setAttribute('position', '0 0 0');
+                textEntity.setAttribute('color', 'white');
+                textEntity.setAttribute('align', 'center');
+                textEntity.setAttribute('scale', '500 500 500');
+                textEntity.setAttribute('shader', 'flat');
+                textEntity.setAttribute('look-at', '[gps-camera]');
+                container.appendChild(textEntity);
+                
+                arScene.appendChild(container);
             });
-          }, (err) => {
-            alert("Error al obtener ubicación: " + err.message);
-          });
-        } catch (err) {
-          alert("Necesito acceso a la cámara para continuar.");
-          console.error(err);
-        }
-      });
+
+            // Lógica para mostrar la escena AR al hacer clic en el botón
+            startBtn.addEventListener('click', () => {
+                loadingMessage.style.display = 'block';
+                startBtn.style.display = 'none';
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            loadingMessage.style.display = 'none';
+                            overlay.style.display = 'none';
+                            arScene.style.display = 'block';
+                            console.log('Geolocalización iniciada:', position);
+                        },
+                        (error) => {
+                            loadingMessage.style.display = 'none';
+                            startBtn.style.display = 'block';
+                            console.error('Error de geolocalización:', error);
+                            alert('No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado y de haber otorgado los permisos necesarios.');
+                        }
+                    );
+                } else {
+                    alert('Tu navegador no soporta geolocalización.');
+                    loadingMessage.style.display = 'none';
+                    startBtn.style.display = 'block';
+                }
+            });
+        });
     </script>
-  </body>
+</body>
 </html>
