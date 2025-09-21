@@ -45,7 +45,7 @@
 
     <div id="overlay">
         <h1>Montañas de El Hoyo</h1>
-        <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas.</p>
+        <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas. (Prueba en landscape)</p>
         <button id="startBtn">Iniciar AR</button>
         <p id="loading-message">Cargando ubicación, por favor espere...</p>
     </div>
@@ -54,12 +54,24 @@
         id="ar-scene"
         vr-mode-ui="enabled: false"
         embedded
-        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true;"  <!-- Debug activado para ver logs -->
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true;"
         renderer="antialias: true; alpha: true"
         device-orientation-permission-ui="enabled: false"
-        style="display:none">
+        style="display:none"
+        gps-projection-matrix>
 
-        <a-entity gps-new-camera="gpsMinDistance: 10; gpsTimeOut: 15000; maxDistance: 10000"></a-entity>
+        <!-- Cámara con fixes para Android: orientación suavizada y sin look-controls default -->
+        <a-entity 
+            look-controls-enabled="false" 
+            arjs-device-orientation-controls="smoothingFactor: 0.1"
+            gps-new-camera="gpsMinDistance: 10; gpsTimeOut: 15000; maxDistance: 10000">
+        </a-entity>
+
+        <!-- Flecha norte para test calibración (roja, apunta al norte) -->
+        <a-entity gps-new-entity-place="latitude: 0; longitude: 0; height: 0;" position="0 1 0" rotation="0 0 0">
+            <a-box position="0 0 -0.5" width="0.05" height="2" depth="0.05" color="red" look-at="0 0 -1"></a-box>
+            <a-text value="Norte" color="red" align="center" position="0 0.5 0" scale="100 100 100"></a-text>
+        </a-entity>
 
     </a-scene>
 
@@ -78,11 +90,11 @@
             const arScene = document.getElementById('ar-scene');
             const loadingMessage = document.getElementById('loading-message');
             
-            // Genera las entidades para cada montaña (usando gps-new-entity-place para mejor compatibilidad Android)
+            // Genera las entidades para cada montaña
             mountains.forEach(mountain => {
-                // Contenedor principal con posición GPS (con altura offset para flotar)
+                // Contenedor principal con posición GPS (altura offset para flotar)
                 const container = document.createElement('a-entity');
-                container.setAttribute('gps-new-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude}; height: 100;`);
+                container.setAttribute('gps-new-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude}; height: 200;`);
                 
                 // Fondo semitransparente (plano negro)
                 const background = document.createElement('a-plane');
