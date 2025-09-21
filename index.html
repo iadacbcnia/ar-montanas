@@ -32,6 +32,11 @@
             cursor: pointer;
             margin-top: 20px;
         }
+        #loading-message {
+            margin-top: 20px;
+            font-size: 16px;
+            display: none; /* Oculto por defecto */
+        }
     </style>
 </head>
 <body>
@@ -40,6 +45,7 @@
         <h1>Montañas de El Hoyo</h1>
         <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas.</p>
         <button id="startBtn">Iniciar AR</button>
+        <p id="loading-message">Cargando ubicación, por favor espere...</p>
     </div>
 
     <a-scene
@@ -49,11 +55,12 @@
         arjs="sourceType: webcam; debugUIEnabled: false;"
         renderer="antialias: true; alpha: true"
         device-orientation-permission-ui="enabled: false"
-        style="display:none">
+        style="display:none"
+        gps-camera="maxDistance: 10000; gpsMinDistance: 10; gpsTimeOut: 15000">
 
         <a-camera gps-camera rotation-reader></a-camera>
 
-        </a-scene>
+    </a-scene>
 
     <script>
         // Datos de las montañas en un array de objetos
@@ -62,46 +69,48 @@
             { name: "Cerro Plataforma", latitude: -42.1005, longitude: -71.4542 },
             { name: "Cerro Hielo Azul", latitude: -42.0489, longitude: -71.5453 },
             { name: "Pirque Chico", latitude: -42.0785, longitude: -71.4622 }
-            // Agrega más montañas aquí
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
             const startBtn = document.getElementById('startBtn');
             const overlay = document.getElementById('overlay');
             const arScene = document.getElementById('ar-scene');
+            const loadingMessage = document.getElementById('loading-message');
             
             // Genera las entidades de texto para cada montaña
             mountains.forEach(mountain => {
                 const textEntity = document.createElement('a-text');
                 textEntity.setAttribute('value', mountain.name);
                 textEntity.setAttribute('look-at', '[gps-camera]');
-                textEntity.setAttribute('scale', '50 50 50');
+                textEntity.setAttribute('scale', '200 200 200'); // Escala aumentada
                 textEntity.setAttribute('gps-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude};`);
                 arScene.appendChild(textEntity);
             });
 
             // Lógica para mostrar la escena AR al hacer clic en el botón
             startBtn.addEventListener('click', () => {
-                // Oculta el overlay de bienvenida
-                overlay.style.display = 'none';
-                
-                // Muestra la escena AR
-                arScene.style.display = 'block';
+                loadingMessage.style.display = 'block';
+                startBtn.style.display = 'none';
 
-                // Llama a una función para iniciar la geolocalización
-                // Esto es necesario en algunos navegadores para que el GPS funcione
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
+                            loadingMessage.style.display = 'none';
+                            overlay.style.display = 'none';
+                            arScene.style.display = 'block';
                             console.log('Geolocalización iniciada:', position);
                         },
                         (error) => {
+                            loadingMessage.style.display = 'none';
+                            startBtn.style.display = 'block';
                             console.error('Error de geolocalización:', error);
-                            alert('No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado.');
+                            alert('No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado y de haber otorgado los permisos necesarios.');
                         }
                     );
                 } else {
                     alert('Tu navegador no soporta geolocalización.');
+                    loadingMessage.style.display = 'none';
+                    startBtn.style.display = 'block';
                 }
             });
         });
