@@ -1,78 +1,110 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Montañas de El Hoyo - AR</title>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
-  <style>
-    body { margin: 0; overflow: hidden; font-family: sans-serif; }
-    #startBtn {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 15px 25px;
-      font-size: 20px;
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Montañas de El Hoyo - AR</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000;
+        }
+        #startBtn {
+            padding: 15px 30px;
+            font-size: 20px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-  <!-- Botón inicial -->
-  <button id="startBtn">Iniciar AR</button>
 
-  <!-- Escena AR -->
-  <a-scene
-    vr-mode-ui="enabled: false"
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    renderer="antialias: true; alpha: true"
-    device-orientation-permission-ui="enabled: false"
-    style="display:none">
+    <div id="overlay">
+        <h1>Montañas de El Hoyo</h1>
+        <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas.</p>
+        <button id="startBtn">Iniciar AR</button>
+    </div>
 
-    <!-- Cámara con GPS -->
-    <a-camera gps-camera rotation-reader></a-camera>
+    <a-scene
+        id="ar-scene"
+        vr-mode-ui="enabled: false"
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false;"
+        renderer="antialias: true; alpha: true"
+        device-orientation-permission-ui="enabled: false"
+        style="display:none">
 
-    <!-- Cerro Pirque -->
-    <a-text value="Cerro Pirque"
-            look-at="[gps-camera]"
-            scale="50 50 50"
-            gps-entity-place="latitude: -42.0743; longitude: -71.4710;">
-    </a-text>
+        <a-camera gps-camera rotation-reader></a-camera>
 
-    <!-- Cerro Plataforma -->
-    <a-text value="Cerro Plataforma"
-            look-at="[gps-camera]"
-            scale="50 50 50"
-            gps-entity-place="latitude: -42.1005; longitude: -71.4542;">
-    </a-text>
+        </a-scene>
 
-    <!-- Cerro Hielo Azul -->
-    <a-text value="Cerro Hielo Azul"
-            look-at="[gps-camera]"
-            scale="50 50 50"
-            gps-entity-place="latitude: -42.0489; longitude: -71.5453;">
-    </a-text>
+    <script>
+        // Datos de las montañas en un array de objetos
+        const mountains = [
+            { name: "Cerro Pirque", latitude: -42.0743, longitude: -71.4710 },
+            { name: "Cerro Plataforma", latitude: -42.1005, longitude: -71.4542 },
+            { name: "Cerro Hielo Azul", latitude: -42.0489, longitude: -71.5453 },
+            { name: "Pirque Chico", latitude: -42.0785, longitude: -71.4622 }
+            // Agrega más montañas aquí
+        ];
 
-    <!-- Cerro Pirque Chico -->
-    <a-text value="Pirque Chico"
-            look-at="[gps-camera]"
-            scale="50 50 50"
-            gps-entity-place="latitude: -42.0785; longitude: -71.4622;">
-    </a-text>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startBtn = document.getElementById('startBtn');
+            const overlay = document.getElementById('overlay');
+            const arScene = document.getElementById('ar-scene');
+            
+            // Genera las entidades de texto para cada montaña
+            mountains.forEach(mountain => {
+                const textEntity = document.createElement('a-text');
+                textEntity.setAttribute('value', mountain.name);
+                textEntity.setAttribute('look-at', '[gps-camera]');
+                textEntity.setAttribute('scale', '50 50 50');
+                textEntity.setAttribute('gps-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude};`);
+                arScene.appendChild(textEntity);
+            });
 
-  </a-scene>
+            // Lógica para mostrar la escena AR al hacer clic en el botón
+            startBtn.addEventListener('click', () => {
+                // Oculta el overlay de bienvenida
+                overlay.style.display = 'none';
+                
+                // Muestra la escena AR
+                arScene.style.display = 'block';
 
-  <script>
-    document.getElementById('startBtn').addEventListener('click', () => {
-      document.getElementById('startBtn').style.display = 'none';
-      document.querySelector('a-scene').style.display = 'block';
-    });
-  </script>
+                // Llama a una función para iniciar la geolocalización
+                // Esto es necesario en algunos navegadores para que el GPS funcione
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            console.log('Geolocalización iniciada:', position);
+                        },
+                        (error) => {
+                            console.error('Error de geolocalización:', error);
+                            alert('No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado.');
+                        }
+                    );
+                } else {
+                    alert('Tu navegador no soporta geolocalización.');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
