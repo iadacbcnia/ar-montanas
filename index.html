@@ -37,7 +37,7 @@
         #loading-message {
             margin-top: 20px;
             font-size: 16px;
-            display: none; /* Oculto por defecto */
+            display: none;
         }
     </style>
 </head>
@@ -45,9 +45,9 @@
 
     <div id="overlay">
         <h1>Montañas de El Hoyo</h1>
-        <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas. (Usa landscape y calibra brújula)</p>
+        <p>Inicia AR en landscape (horizontal) y calibra brújula (movimiento 8). Busca 'TEST' primero.</p>
         <button id="startBtn">Iniciar AR</button>
-        <p id="loading-message">Cargando ubicación, por favor espere...</p>
+        <p id="loading-message">Cargando GPS...</p>
     </div>
 
     <a-scene
@@ -60,7 +60,7 @@
         style="display:none"
         gps-projection-matrix>
 
-        <!-- Cámara con fixes para Android/Samsung: orientación suavizada -->
+        <!-- Cámara con smoothing para Samsung -->
         <a-entity 
             look-controls-enabled="false" 
             arjs-device-orientation-controls="smoothingFactor: 0.1"
@@ -70,9 +70,9 @@
     </a-scene>
 
     <script>
-        let userLat, userLon; // Para guardar posición del usuario
+        let userLat, userLon;
 
-        // Datos de las montañas en un array de objetos
+        // Datos de montañas (coords ajustadas para El Hoyo)
         const mountains = [
             { name: "Cerro Pirque", latitude: -42.0743, longitude: -71.4710 },
             { name: "Cerro Plataforma", latitude: -42.1005, longitude: -71.4542 },
@@ -86,8 +86,7 @@
             const arScene = document.getElementById('ar-scene');
             const loadingMessage = document.getElementById('loading-message');
             
-            // Función para crear etiqueta con fondo
-            function createLabel(name, lat, lon, height = 0) {
+            function createLabel(name, lat, lon, height = -50) {  // Height negativo para fix flotación Android
                 const container = document.createElement('a-entity');
                 container.setAttribute('gps-new-entity-place', `latitude: ${lat}; longitude: ${lon}; height: ${height};`);
                 
@@ -101,7 +100,7 @@
                 background.setAttribute('look-at', '[gps-new-camera]');
                 container.appendChild(background);
                 
-                // Texto
+                // Texto grande
                 const textEntity = document.createElement('a-text');
                 textEntity.setAttribute('value', name);
                 textEntity.setAttribute('position', '0 0 0');
@@ -115,13 +114,12 @@
                 return container;
             }
             
-            // Genera etiquetas para montañas (height:0 para suelo)
+            // Crea montañas con height=-50
             mountains.forEach(mountain => {
-                const label = createLabel(mountain.name, mountain.latitude, mountain.longitude, 0);
+                const label = createLabel(mountain.name, mountain.latitude, mountain.longitude, -50);
                 arScene.appendChild(label);
             });
 
-            // Lógica para mostrar la escena AR
             startBtn.addEventListener('click', () => {
                 loadingMessage.style.display = 'block';
                 startBtn.style.display = 'none';
@@ -131,10 +129,10 @@
                         (position) => {
                             userLat = position.coords.latitude;
                             userLon = position.coords.longitude;
-                            console.log('Tu posición:', userLat, userLon);
+                            console.log('Posición:', userLat, userLon, 'Precisión:', position.coords.accuracy);
                             
-                            // Agrega test label cerca de ti (a 0m, visible siempre)
-                            const testLabel = createLabel('TEST (cerca de ti)', userLat, userLon, 0);
+                            // TEST label cerca de ti (height=-50 también)
+                            const testLabel = createLabel('TEST (cerca)', userLat, userLon, -50);
                             arScene.appendChild(testLabel);
                             
                             loadingMessage.style.display = 'none';
@@ -144,13 +142,12 @@
                         (error) => {
                             loadingMessage.style.display = 'none';
                             startBtn.style.display = 'block';
-                            console.error('Error GPS:', error);
-                            alert('Error GPS. Activa ubicación precisa.');
+                            alert('Error GPS: ' + error.message + '. Usa precisión alta.');
                         },
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
                     );
                 } else {
-                    alert('Navegador sin GPS.');
+                    alert('Sin GPS en navegador.');
                     loadingMessage.style.display = 'none';
                     startBtn.style.display = 'block';
                 }
