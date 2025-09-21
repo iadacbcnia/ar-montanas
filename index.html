@@ -5,27 +5,58 @@
   <title>AR Montañas</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.2/aframe/build/aframe-ar.js"></script>
+  <style>
+    #startBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 25px;
+      font-size: 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      z-index: 9999;
+    }
+  </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
-  <!-- Escena con AR.js -->
+<body style="margin:0; overflow:hidden;">
+  <button id="startBtn">Iniciar AR</button>
+
   <a-scene
     vr-mode-ui="enabled: false"
     embedded
     arjs="sourceType: webcam; debugUIEnabled: false;"
     renderer="antialias: true; alpha: true"
-    device-orientation-permission-ui="enabled: true">
+    device-orientation-permission-ui="enabled: true"
+    style="display:none"
+    id="scene">
 
-    <!-- Cámara con GPS -->
     <a-camera gps-camera rotation-reader></a-camera>
 
-    <!-- Ejemplo de marcador de montaña -->
+    <!-- Marcador de montaña -->
     <a-text
       value="Cerro Piltriquitrón"
       look-at="[gps-camera]"
       scale="20 20 20"
       gps-entity-place="latitude: -41.9945; longitude: -71.5322;">
     </a-text>
-    
+
   </a-scene>
+
+  <script>
+    document.getElementById("startBtn").addEventListener("click", () => {
+      // pedir permisos manualmente
+      if (DeviceOrientationEvent.requestPermission) {
+        DeviceOrientationEvent.requestPermission().catch(console.error);
+      }
+      navigator.geolocation.getCurrentPosition(() => {
+        document.getElementById("startBtn").style.display = "none";
+        document.getElementById("scene").style.display = "block";
+      });
+    });
+  </script>
 </body>
 </html>
