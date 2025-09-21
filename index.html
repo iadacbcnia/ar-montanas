@@ -45,7 +45,7 @@
 
     <div id="overlay">
         <h1>Montañas de El Hoyo</h1>
-        <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas. (Prueba en landscape)</p>
+        <p>Aprieta el botón para iniciar la experiencia de Realidad Aumentada y ver las montañas. (Usa landscape y calibra brújula)</p>
         <button id="startBtn">Iniciar AR</button>
         <p id="loading-message">Cargando ubicación, por favor espere...</p>
     </div>
@@ -60,22 +60,18 @@
         style="display:none"
         gps-projection-matrix>
 
-        <!-- Cámara con fixes para Android: orientación suavizada y sin look-controls default -->
+        <!-- Cámara con fixes para Android/Samsung: orientación suavizada -->
         <a-entity 
             look-controls-enabled="false" 
             arjs-device-orientation-controls="smoothingFactor: 0.1"
             gps-new-camera="gpsMinDistance: 10; gpsTimeOut: 15000; maxDistance: 10000">
         </a-entity>
 
-        <!-- Flecha norte para test calibración (roja, apunta al norte) -->
-        <a-entity gps-new-entity-place="latitude: 0; longitude: 0; height: 0;" position="0 1 0" rotation="0 0 0">
-            <a-box position="0 0 -0.5" width="0.05" height="2" depth="0.05" color="red" look-at="0 0 -1"></a-box>
-            <a-text value="Norte" color="red" align="center" position="0 0.5 0" scale="100 100 100"></a-text>
-        </a-entity>
-
     </a-scene>
 
     <script>
+        let userLat, userLon; // Para guardar posición del usuario
+
         // Datos de las montañas en un array de objetos
         const mountains = [
             { name: "Cerro Pirque", latitude: -42.0743, longitude: -71.4710 },
@@ -90,13 +86,12 @@
             const arScene = document.getElementById('ar-scene');
             const loadingMessage = document.getElementById('loading-message');
             
-            // Genera las entidades para cada montaña
-            mountains.forEach(mountain => {
-                // Contenedor principal con posición GPS (altura offset para flotar)
+            // Función para crear etiqueta con fondo
+            function createLabel(name, lat, lon, height = 0) {
                 const container = document.createElement('a-entity');
-                container.setAttribute('gps-new-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude}; height: 200;`);
+                container.setAttribute('gps-new-entity-place', `latitude: ${lat}; longitude: ${lon}; height: ${height};`);
                 
-                // Fondo semitransparente (plano negro)
+                // Fondo semitransparente
                 const background = document.createElement('a-plane');
                 background.setAttribute('position', '0 0 -0.01');
                 background.setAttribute('rotation', '-90 0 0');
@@ -106,9 +101,9 @@
                 background.setAttribute('look-at', '[gps-new-camera]');
                 container.appendChild(background);
                 
-                // Texto con escala aumentada
+                // Texto
                 const textEntity = document.createElement('a-text');
-                textEntity.setAttribute('value', mountain.name);
+                textEntity.setAttribute('value', name);
                 textEntity.setAttribute('position', '0 0 0');
                 textEntity.setAttribute('color', 'white');
                 textEntity.setAttribute('align', 'center');
@@ -117,10 +112,16 @@
                 textEntity.setAttribute('look-at', '[gps-new-camera]');
                 container.appendChild(textEntity);
                 
-                arScene.appendChild(container);
+                return container;
+            }
+            
+            // Genera etiquetas para montañas (height:0 para suelo)
+            mountains.forEach(mountain => {
+                const label = createLabel(mountain.name, mountain.latitude, mountain.longitude, 0);
+                arScene.appendChild(label);
             });
 
-            // Lógica para mostrar la escena AR al hacer clic en el botón
+            // Lógica para mostrar la escena AR
             startBtn.addEventListener('click', () => {
                 loadingMessage.style.display = 'block';
                 startBtn.style.display = 'none';
@@ -128,20 +129,28 @@
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
+                            userLat = position.coords.latitude;
+                            userLon = position.coords.longitude;
+                            console.log('Tu posición:', userLat, userLon);
+                            
+                            // Agrega test label cerca de ti (a 0m, visible siempre)
+                            const testLabel = createLabel('TEST (cerca de ti)', userLat, userLon, 0);
+                            arScene.appendChild(testLabel);
+                            
                             loadingMessage.style.display = 'none';
                             overlay.style.display = 'none';
                             arScene.style.display = 'block';
-                            console.log('Geolocalización iniciada:', position);
                         },
                         (error) => {
                             loadingMessage.style.display = 'none';
                             startBtn.style.display = 'block';
-                            console.error('Error de geolocalización:', error);
-                            alert('No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado y de haber otorgado los permisos necesarios.');
-                        }
+                            console.error('Error GPS:', error);
+                            alert('Error GPS. Activa ubicación precisa.');
+                        },
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                     );
                 } else {
-                    alert('Tu navegador no soporta geolocalización.');
+                    alert('Navegador sin GPS.');
                     loadingMessage.style.display = 'none';
                     startBtn.style.display = 'block';
                 }
