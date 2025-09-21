@@ -54,13 +54,12 @@
         id="ar-scene"
         vr-mode-ui="enabled: false"
         embedded
-        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
+        arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: true;"  <!-- Debug activado para ver logs -->
         renderer="antialias: true; alpha: true"
         device-orientation-permission-ui="enabled: false"
-        style="display:none"
-        gps-camera="maxDistance: 10000; gpsMinDistance: 10; gpsTimeOut: 15000">
+        style="display:none">
 
-        <a-camera gps-camera rotation-reader></a-camera>
+        <a-entity gps-new-camera="gpsMinDistance: 10; gpsTimeOut: 15000; maxDistance: 10000"></a-entity>
 
     </a-scene>
 
@@ -79,11 +78,11 @@
             const arScene = document.getElementById('ar-scene');
             const loadingMessage = document.getElementById('loading-message');
             
-            // Genera las entidades para cada montaña (contenedor con fondo y texto)
+            // Genera las entidades para cada montaña (usando gps-new-entity-place para mejor compatibilidad Android)
             mountains.forEach(mountain => {
-                // Contenedor principal con posición GPS
+                // Contenedor principal con posición GPS (con altura offset para flotar)
                 const container = document.createElement('a-entity');
-                container.setAttribute('gps-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude};`);
+                container.setAttribute('gps-new-entity-place', `latitude: ${mountain.latitude}; longitude: ${mountain.longitude}; height: 100;`);
                 
                 // Fondo semitransparente (plano negro)
                 const background = document.createElement('a-plane');
@@ -92,7 +91,7 @@
                 background.setAttribute('width', '0.05');
                 background.setAttribute('height', '0.01');
                 background.setAttribute('material', 'color: black; opacity: 0.5; side: double');
-                background.setAttribute('look-at', '[gps-camera]');
+                background.setAttribute('look-at', '[gps-new-camera]');
                 container.appendChild(background);
                 
                 // Texto con escala aumentada
@@ -103,7 +102,7 @@
                 textEntity.setAttribute('align', 'center');
                 textEntity.setAttribute('scale', '500 500 500');
                 textEntity.setAttribute('shader', 'flat');
-                textEntity.setAttribute('look-at', '[gps-camera]');
+                textEntity.setAttribute('look-at', '[gps-new-camera]');
                 container.appendChild(textEntity);
                 
                 arScene.appendChild(container);
