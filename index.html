@@ -1,34 +1,78 @@
-<script>
-async function initAR() {
-  try {
-    // Pedir cámara
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    document.body.insertAdjacentHTML("beforeend", "<p style='color:green;'>✅ Cámara lista</p>");
-
-    // Pedir ubicación
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          console.log("Ubicación OK", pos.coords);
-          document.body.insertAdjacentHTML("beforeend", "<p style='color:green;'>✅ Ubicación lista</p>");
-          startAR(); // <-- Aquí recién inicia la escena AR
-        },
-        (err) => {
-          alert("Error en ubicación: " + err.message);
-        }
-      );
-    } else {
-      alert("Tu navegador no soporta geolocalización");
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Montañas de El Hoyo - AR</title>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    #startBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 25px;
+      font-size: 20px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
     }
-  } catch (err) {
-    alert("Error al acceder a cámara: " + err.message);
-  }
-}
+  </style>
+</head>
+<body>
+  <!-- Botón inicial -->
+  <button id="startBtn">Iniciar AR</button>
 
-function startAR() {
-  // Aquí va tu código AR.js o A-Frame
-  document.body.insertAdjacentHTML("beforeend", "<p style='color:blue;'>🚀 Iniciando AR</p>");
-}
-</script>
+  <!-- Escena AR -->
+  <a-scene
+    vr-mode-ui="enabled: false"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    renderer="antialias: true; alpha: true"
+    device-orientation-permission-ui="enabled: false"
+    style="display:none">
 
-<button onclick="initAR()">Iniciar AR</button>
+    <!-- Cámara con GPS -->
+    <a-camera gps-camera rotation-reader></a-camera>
+
+    <!-- Cerro Pirque -->
+    <a-text value="Cerro Pirque"
+            look-at="[gps-camera]"
+            scale="50 50 50"
+            gps-entity-place="latitude: -42.0743; longitude: -71.4710;">
+    </a-text>
+
+    <!-- Cerro Plataforma -->
+    <a-text value="Cerro Plataforma"
+            look-at="[gps-camera]"
+            scale="50 50 50"
+            gps-entity-place="latitude: -42.1005; longitude: -71.4542;">
+    </a-text>
+
+    <!-- Cerro Hielo Azul -->
+    <a-text value="Cerro Hielo Azul"
+            look-at="[gps-camera]"
+            scale="50 50 50"
+            gps-entity-place="latitude: -42.0489; longitude: -71.5453;">
+    </a-text>
+
+    <!-- Cerro Pirque Chico -->
+    <a-text value="Pirque Chico"
+            look-at="[gps-camera]"
+            scale="50 50 50"
+            gps-entity-place="latitude: -42.0785; longitude: -71.4622;">
+    </a-text>
+
+  </a-scene>
+
+  <script>
+    document.getElementById('startBtn').addEventListener('click', () => {
+      document.getElementById('startBtn').style.display = 'none';
+      document.querySelector('a-scene').style.display = 'block';
+    });
+  </script>
+</body>
+</html>
